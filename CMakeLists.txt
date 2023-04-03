@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.22.1)
+
+project(
+    Tic-Tac-Toe
+    VERSION 1.0
+    LANGUAGES C
+)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
+add_subdirectory(src)

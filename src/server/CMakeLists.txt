@@ -11,6 +11,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(
   ${server_name}
   PUBLIC
+    libserver
     Threads::Threads
 )
 
@@ -25,3 +26,5 @@ target_include_directories(
   PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
 )
+
+add_subdirectory(libserver)

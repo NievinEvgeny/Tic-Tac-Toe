@@ -12,6 +12,14 @@
             "hidden": true
         },
         {
+            "name": "debug",
+            "inherits": "base",
+            "binaryDir": "${sourceDir}/build/debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
             "name": "release",
             "inherits": "base",
             "binaryDir": "${sourceDir}/build/release",
@@ -21,6 +29,15 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "jobs": 4,
+            "targets": [
+                "client",
+                "server"
+            ]
+        },
         {
             "name": "release",
             "configurePreset": "release",

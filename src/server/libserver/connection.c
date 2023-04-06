@@ -16,7 +16,7 @@ int setup_listener(int port)
 
     if (sockfd < 0)
     {
-        error("Can't open listener socket.");
+        error("Can't open listener socket");
     }
 
     memset(&serv_addr, 0, sizeof(serv_addr));
@@ -26,7 +26,7 @@ int setup_listener(int port)
 
     if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        error("Can't bind listener socket.");
+        error("Can't bind listener socket");
     }
 
     return sockfd;
@@ -51,7 +51,7 @@ void get_clients(int lis_sockfd, int* cli_sockfd)
 
         if (cli_sockfd[num_conn] < 0)
         {
-            error("Can't accept connection from a client.");
+            error("Can't accept connection from a client");
         }
 
         if (send(cli_sockfd[num_conn], &num_conn, sizeof(int), 0) == -1)

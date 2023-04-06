@@ -11,8 +11,16 @@ target_sources(
   client.c
 )
 
+target_link_libraries(
+  ${client_name}
+  PUBLIC
+    libclient
+)
+
 target_include_directories(
   ${client_name}
   PRIVATE
     ${PROJECT_SOURCE_DIR}/include/
 )
+
+add_subdirectory(libclient)

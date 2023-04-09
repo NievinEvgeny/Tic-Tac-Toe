@@ -1,5 +1,5 @@
 #include <client/connection.h>
-#include <client/error_handler.h>
+#include <client/game.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     int sockfd = connect_to_server(argv[1], atoi(argv[2]));
 
-    debug_func(sockfd);
+    play_game(sockfd);
 
     close(sockfd);
     return 0;

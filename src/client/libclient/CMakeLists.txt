@@ -5,6 +5,8 @@ add_library(${target_name} STATIC
     ${PROJECT_SOURCE_DIR}/include/client/connection.h
     error_handler.c
     ${PROJECT_SOURCE_DIR}/include/client/error_handler.h
+    game.c
+    ${PROJECT_SOURCE_DIR}/include/client/game.h
 )
 
 include(CompileOptions)

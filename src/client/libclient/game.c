@@ -27,12 +27,12 @@ static void print_board(int32_t game_state)
     {
         for (short i = 1; i != 8; i <<= 1)
         {
-            if (game_state & (i << j))
+            if (game_state & (i << j * 3))
             {
                 printf("X ");
                 continue;
             }
-            if (game_state & (i << (j + 16)))
+            if (game_state & (i << (j * 3 + 16)))
             {
                 printf("O ");
                 continue;

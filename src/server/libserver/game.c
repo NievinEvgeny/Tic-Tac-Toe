@@ -44,22 +44,33 @@ static void recv_move(int* cli_sockfd, int32_t game_state, short* move)
     }
 }
 
+static int32_t update_game_state(int32_t game_state, short turn)
+{
+    if (PLAYER_ID(game_state))
+    {
+        return game_state | (1 << (turn + 16));
+    }
+    return game_state | (1 << turn);
+}
+
 void* run_game(void* thread_data)
 {
     int* cli_sockfd = (int*)thread_data;
 
     // 31 - state, 15 - which turn
-    int32_t game_state = 0x80008000;
-
-    short move;
+    int32_t game_state = 0x80000000;
 
     setup_players_id(cli_sockfd);
 
     while (game_on(game_state))
     {
+        short move = 0;
+
         send_game_update(cli_sockfd, game_state);
 
         recv_move(cli_sockfd, game_state, &move);
+
+        game_state = update_game_state(game_state, move);
 
         SWITCH_TURN(game_state);
     }

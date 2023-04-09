@@ -24,7 +24,7 @@ static void recv_id(int sockfd, bool* id)
 
     if (msg_len == 0)
     {
-        error("Server is shudown");
+        error("Server is shutdown");
     }
 }
 
@@ -62,7 +62,7 @@ static void get_game_update(int sockfd, int32_t* game_state)
 
     if (msg_len == 0)
     {
-        error("Server is shudown");
+        error("Server is shutdown");
     }
 }
 
@@ -112,7 +112,7 @@ static void recv_move_validity(int sockfd, bool* move_validity)
 
     if (msg_len == 0)
     {
-        error("Server is shudown");
+        error("Server is shutdown");
     }
 }
 

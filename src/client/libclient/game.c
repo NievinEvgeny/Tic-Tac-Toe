@@ -51,13 +51,13 @@ static void get_game_update(int sockfd, int32_t* game_state)
     }
 }
 
-static short get_turn()
+static short get_move()
 {
     while (true)
     {
-        short turn = 0;
+        short move = 0;
 
-        int result = scanf("%hd", &turn);
+        int result = scanf("%hd", &move);
 
         if (result == EOF)
         {
@@ -69,20 +69,20 @@ static short get_turn()
             {
             }
         }
-        if (turn >= 0 && turn <= 8)
+        if (move >= 0 && move <= 8)
         {
-            return turn;
+            return move;
         }
 
         printf("Invalid input, try again\n");
     }
 }
 
-static void send_turn(int sockfd, short* turn)
+static void send_move(int sockfd, short* move)
 {
-    if (send(sockfd, turn, sizeof(short), 0) == -1)
+    if (send(sockfd, move, sizeof(short), 0) == -1)
     {
-        error("Can't send turn to server");
+        error("Can't send move to server");
     }
 }
 
@@ -105,8 +105,8 @@ void play_game(int sockfd)
         if (PLAYER_ID(game_state) == id)
         {
             printf("Your turn\n");
-            short turn = get_turn();
-            send_turn(sockfd, &turn);
+            short move = get_move();
+            send_move(sockfd, &move);
         }
 
         get_game_update(sockfd, &game_state);

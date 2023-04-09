@@ -53,10 +53,10 @@ static void get_game_update(int sockfd, int32_t* game_state)
 
 static short get_turn()
 {
-    short turn;
-
     while (true)
     {
+        short turn = 0;
+
         int result = scanf("%hd", &turn);
 
         if (result == EOF)
@@ -80,7 +80,7 @@ static short get_turn()
 
 static void send_turn(int sockfd, short* turn)
 {
-    if (send(sockfd, &turn, sizeof(short), 0) == -1)
+    if (send(sockfd, turn, sizeof(short), 0) == -1)
     {
         error("Can't send turn to server");
     }

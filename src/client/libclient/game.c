@@ -15,9 +15,16 @@ static bool game_on(int32_t game_state)
 
 static void recv_id(int sockfd, bool* id)
 {
-    if (recv(sockfd, id, sizeof(bool), 0) == -1)
+    int msg_len = recv(sockfd, id, sizeof(bool), 0);
+
+    if (msg_len < 0)
     {
-        error("Can't recv id from server");
+        error("Can't get id from server");
+    }
+
+    if (msg_len == 0)
+    {
+        error("Server is shudown");
     }
 }
 
@@ -46,9 +53,16 @@ static void print_board(int32_t game_state)
 
 static void get_game_update(int sockfd, int32_t* game_state)
 {
-    if (recv(sockfd, game_state, sizeof(int32_t), 0) == -1)
+    int msg_len = recv(sockfd, game_state, sizeof(int32_t), 0);
+
+    if (msg_len < 0)
     {
         error("Can't get update of game from server");
+    }
+
+    if (msg_len == 0)
+    {
+        error("Server is shudown");
     }
 }
 
@@ -89,9 +103,16 @@ static void send_move(int sockfd, short* move)
 
 static void recv_move_validity(int sockfd, bool* move_validity)
 {
-    if (recv(sockfd, move_validity, sizeof(bool), 0) == -1)
+    int msg_len = recv(sockfd, move_validity, sizeof(bool), 0);
+
+    if (msg_len < 0)
     {
         error("Can't get move validity from server");
+    }
+
+    if (msg_len == 0)
+    {
+        error("Server is shudown");
     }
 }
 

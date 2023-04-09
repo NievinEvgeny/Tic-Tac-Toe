@@ -38,9 +38,16 @@ static void send_game_update(int* cli_sockfd, int32_t game_state)
 
 static void recv_move(int* cli_sockfd, int32_t game_state, short* move)
 {
-    if (recv(cli_sockfd[PLAYER_ID(game_state)], move, sizeof(short), 0) == -1)
+    int msg_len = recv(cli_sockfd[PLAYER_ID(game_state)], move, sizeof(short), 0);
+
+    if (msg_len < 0)
     {
         error("Can't get move from client");
+    }
+
+    if (msg_len == 0)
+    {
+        error("Player disconnected");
     }
 }
 

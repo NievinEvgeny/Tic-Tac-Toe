@@ -53,6 +53,19 @@ static int32_t update_game_state(int32_t game_state, short turn)
     return game_state | (1 << turn);
 }
 
+static bool check_move_valid(int32_t game_state, short move)
+{
+    return (game_state | (game_state >> 16)) & (1 << move) ? 0 : 1;
+}
+
+static void send_move_validity(int* cli_sockfd, int32_t game_state, bool move_valid)
+{
+    if (send(cli_sockfd[PLAYER_ID(game_state)], &move_valid, sizeof(bool), 0) == -1)
+    {
+        error("Can't send move validity to server");
+    }
+}
+
 void* run_game(void* thread_data)
 {
     int* cli_sockfd = (int*)thread_data;
@@ -65,10 +78,16 @@ void* run_game(void* thread_data)
     while (game_on(game_state))
     {
         short move = 0;
+        bool move_valid = 0;
 
         send_game_update(cli_sockfd, game_state);
 
-        recv_move(cli_sockfd, game_state, &move);
+        do
+        {
+            recv_move(cli_sockfd, game_state, &move);
+            move_valid = check_move_valid(game_state, move);
+            send_move_validity(cli_sockfd, game_state, move_valid);
+        } while (!move_valid);
 
         game_state = update_game_state(game_state, move);
 

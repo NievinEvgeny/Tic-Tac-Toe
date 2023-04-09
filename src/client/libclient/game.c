@@ -23,6 +23,7 @@ static void recv_id(int sockfd, bool* id)
 
 static void print_board(int32_t game_state)
 {
+    printf("\e[H\e[2J\e[3J");
     for (short j = 0; j < 3; j++)
     {
         for (short i = 1; i != 8; i <<= 1)
@@ -86,6 +87,32 @@ static void send_move(int sockfd, short* move)
     }
 }
 
+static void recv_move_validity(int sockfd, bool* move_validity)
+{
+    if (recv(sockfd, move_validity, sizeof(bool), 0) == -1)
+    {
+        error("Can't get move validity from server");
+    }
+}
+
+static void process_player_move(int sockfd)
+{
+    while (true)
+    {
+        short move = get_move();
+        send_move(sockfd, &move);
+
+        bool move_valid = 0;
+        recv_move_validity(sockfd, &move_valid);
+        if (move_valid)
+        {
+            break;
+        }
+
+        printf("This field is already occupied, change your move\n");
+    }
+}
+
 void play_game(int sockfd)
 {
     int32_t game_state = 0;
@@ -105,8 +132,7 @@ void play_game(int sockfd)
         if (PLAYER_ID(game_state) == id)
         {
             printf("Your turn\n");
-            short move = get_move();
-            send_move(sockfd, &move);
+            process_player_move(sockfd);
         }
 
         get_game_update(sockfd, &game_state);

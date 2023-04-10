@@ -8,6 +8,10 @@
 
 #define PLAYER_ID(game_state) (game_state & 0x8000) >> 15
 
+#define CHECK_DRAW(game_state) (game_state & 0x20000000) >> 29
+
+#define CHECK_WIN(game_state) (game_state & 0x40000000) >> 30
+
 static bool game_on(int32_t game_state)
 {
     return game_state & 0x80000000;
@@ -158,4 +162,17 @@ void play_game(int sockfd)
 
         get_game_update(sockfd, &game_state);
     }
+
+    if (CHECK_DRAW(game_state))
+    {
+        printf("Draw\n");
+        return;
+    }
+
+    if (CHECK_WIN(game_state) == id)
+    {
+        printf("You win\n");
+        return;
+    }
+    printf("You lost\n");
 }

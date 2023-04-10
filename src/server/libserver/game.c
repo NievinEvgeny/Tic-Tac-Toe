@@ -12,6 +12,12 @@
 
 #define SWITCH_TURN(game_state) game_state ^= 0x8000
 
+#define END_GAME(game_state) game_state ^= 0x80000000
+
+#define WIN_O(game_state) game_state |= 0x40000000
+
+#define DRAW(game_state) game_state |= 0x20000000
+
 static bool game_on(int32_t game_state)
 {
     return game_state & 0x80000000;
@@ -47,11 +53,13 @@ static void recv_move(int* cli_sockfd, int32_t game_state, short* move)
 
     if (msg_len == 0)
     {
+        END_GAME(game_state);
+        send_game_update(cli_sockfd, game_state);
         error("Player disconnected");
     }
 }
 
-static int32_t update_game_state(int32_t game_state, short turn)
+static int32_t process_move(int32_t game_state, short turn)
 {
     if (PLAYER_ID(game_state))
     {
@@ -73,21 +81,46 @@ static void send_move_validity(int* cli_sockfd, int32_t game_state, bool move_va
     }
 }
 
+static bool win_check(int32_t game_state)
+{
+    const int win_states[8] = {0x7, 0x38, 0x1C0, 0x124, 0x92, 0x49, 0x111, 0x54};
+
+    for (short i = 0; i < 8; i++)
+    {
+        if (((game_state >> 16) & win_states[i]) == win_states[i])
+        {
+            return 1;
+        }
+        if ((game_state & win_states[i]) == win_states[i])
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static bool draw_check(int32_t game_state)
+{
+    const int draw_state = 0x01FF;
+
+    return ((game_state | (game_state >> 16)) & draw_state) == draw_state ? 1 : 0;
+}
+
 void* run_game(void* thread_data)
 {
     int* cli_sockfd = (int*)thread_data;
 
-    // 31 - state, 15 - which turn
+    // 31 - state, 30 - who won (1 - O, 0 - X), 29 - draw, 15 - which turn
     int32_t game_state = 0x80000000;
 
     setup_players_id(cli_sockfd);
 
     while (game_on(game_state))
     {
+        send_game_update(cli_sockfd, game_state);
+
         short move = 0;
         bool move_valid = 0;
-
-        send_game_update(cli_sockfd, game_state);
 
         do
         {
@@ -96,7 +129,27 @@ void* run_game(void* thread_data)
             send_move_validity(cli_sockfd, game_state, move_valid);
         } while (!move_valid);
 
-        game_state = update_game_state(game_state, move);
+        game_state = process_move(game_state, move);
+
+        if (win_check(game_state))
+        {
+            END_GAME(game_state);
+
+            if (PLAYER_ID(game_state))
+            {
+                WIN_O(game_state);
+            }
+            send_game_update(cli_sockfd, game_state);
+            break;
+        }
+
+        if (draw_check(game_state))
+        {
+            END_GAME(game_state);
+            DRAW(game_state);
+            send_game_update(cli_sockfd, game_state);
+            break;
+        }
 
         SWITCH_TURN(game_state);
     }

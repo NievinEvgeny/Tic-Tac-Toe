@@ -148,12 +148,11 @@ void play_game(int sockfd)
     while (!game_on(game_state))
     {
         get_game_update(sockfd, &game_state);
+        print_board(game_state);
     }
 
     while (game_on(game_state))
     {
-        print_board(game_state);
-
         if (PLAYER_ID(game_state) == id)
         {
             printf("Your turn\n");
@@ -161,6 +160,7 @@ void play_game(int sockfd)
         }
 
         get_game_update(sockfd, &game_state);
+        print_board(game_state);
     }
 
     if (CHECK_DRAW(game_state))

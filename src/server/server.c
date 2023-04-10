@@ -1,5 +1,6 @@
 #include <server/connection.h>
 #include <server/error_handler.h>
+#include <server/game.h>
 #include <string.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -32,7 +33,7 @@ int main(int argc, char* argv[])
 
             pthread_t new_thread;
 
-            int result = pthread_create(&new_thread, NULL, debug_func, (void*)cli_sockfd);
+            int result = pthread_create(&new_thread, NULL, run_game, (void*)cli_sockfd);
 
             if (result)
             {

@@ -41,35 +41,3 @@ int connect_to_server(char* hostname, int port)
 
     return sockfd;
 }
-
-void debug_func(int sockfd)
-{
-    char recv_msg[6];
-    memset(recv_msg, 0, sizeof(char) * 6);
-    char exp_msg[6] = "CHECK";
-    char exit_msg[6] = "EXIT0";
-    int send_num = 1;
-
-    while (strcmp(recv_msg, exp_msg))
-    {
-        if (recv(sockfd, recv_msg, sizeof(char) * strlen(exp_msg), 0) == -1)
-        {
-            error("Can't recv from server");
-        }
-    }
-
-    if (send(sockfd, &send_num, sizeof(int), 0) == -1)
-    {
-        error("Can't send to server");
-    }
-
-    while (strcmp(recv_msg, exit_msg))
-    {
-        if (recv(sockfd, recv_msg, sizeof(char) * strlen(exp_msg), 0) == -1)
-        {
-            error("Can't recv from server");
-        }
-    }
-
-    printf("exit\n");
-}

@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 {
     if (argc != 2)
     {
-        fprintf(stderr, "Error arguments\nExample: ./%s port\n", argv[0]);
+        fprintf(stderr, "Error arguments\nExample: %s port\n", argv[0]);
         exit(1);
     }
 

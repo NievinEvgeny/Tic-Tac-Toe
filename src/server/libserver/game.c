@@ -42,9 +42,9 @@ static void send_game_update(int* cli_sockfd, int32_t game_state)
     }
 }
 
-static void recv_move(int* cli_sockfd, int32_t game_state, short* move)
+static void recv_move(pthread_data* data, int32_t game_state, short* move)
 {
-    int msg_len = recv(cli_sockfd[PLAYER_ID(game_state)], move, sizeof(short), 0);
+    int msg_len = recv(data->cli_sockfd[PLAYER_ID(game_state)], move, sizeof(short), 0);
 
     if (msg_len < 0)
     {
@@ -54,7 +54,12 @@ static void recv_move(int* cli_sockfd, int32_t game_state, short* move)
     if (msg_len == 0)
     {
         END_GAME(game_state);
-        send_game_update(cli_sockfd, game_state);
+        send_game_update(data->cli_sockfd, game_state);
+
+        pthread_mutex_lock(data->mutexcount);
+        *data->player_count -= 2;
+        pthread_mutex_unlock(data->mutexcount);
+
         error("Player disconnected");
     }
 }
@@ -108,25 +113,25 @@ static bool draw_check(int32_t game_state)
 
 void* run_game(void* thread_data)
 {
-    int* cli_sockfd = (int*)thread_data;
+    pthread_data* data = (pthread_data*)thread_data;
 
     // 31 - state, 30 - who won (1 - O, 0 - X), 29 - draw, 15 - which turn
     int32_t game_state = 0x80000000;
 
-    setup_players_id(cli_sockfd);
+    setup_players_id(data->cli_sockfd);
 
     while (game_on(game_state))
     {
-        send_game_update(cli_sockfd, game_state);
+        send_game_update(data->cli_sockfd, game_state);
 
         short move = 0;
         bool move_valid = 0;
 
         do
         {
-            recv_move(cli_sockfd, game_state, &move);
+            recv_move(data, game_state, &move);
             move_valid = check_move_valid(game_state, move);
-            send_move_validity(cli_sockfd, game_state, move_valid);
+            send_move_validity(data->cli_sockfd, game_state, move_valid);
         } while (!move_valid);
 
         game_state = process_move(game_state, move);
@@ -139,7 +144,7 @@ void* run_game(void* thread_data)
             {
                 WIN_O(game_state);
             }
-            send_game_update(cli_sockfd, game_state);
+            send_game_update(data->cli_sockfd, game_state);
             break;
         }
 
@@ -147,16 +152,20 @@ void* run_game(void* thread_data)
         {
             END_GAME(game_state);
             DRAW(game_state);
-            send_game_update(cli_sockfd, game_state);
+            send_game_update(data->cli_sockfd, game_state);
             break;
         }
 
         SWITCH_TURN(game_state);
     }
 
-    close(cli_sockfd[0]);
-    close(cli_sockfd[1]);
+    close(data->cli_sockfd[0]);
+    close(data->cli_sockfd[1]);
 
-    free(cli_sockfd);
+    pthread_mutex_lock(data->mutexcount);
+    *data->player_count -= 2;
+    pthread_mutex_unlock(data->mutexcount);
+
+    free(data->cli_sockfd);
     pthread_exit(NULL);
 }

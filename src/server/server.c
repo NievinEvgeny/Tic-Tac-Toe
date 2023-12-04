@@ -33,7 +33,9 @@ int main(int argc, char* argv[])
 
             pthread_t new_thread;
 
-            int result = pthread_create(&new_thread, NULL, run_game, (void*)cli_sockfd);
+            pthread_data data = {&player_count, cli_sockfd, &mutexcount};
+
+            int result = pthread_create(&new_thread, NULL, run_game, (void*)&data);
 
             if (result)
             {

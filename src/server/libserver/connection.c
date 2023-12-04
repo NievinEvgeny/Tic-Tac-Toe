@@ -32,7 +32,7 @@ int setup_listener(int port)
     return sockfd;
 }
 
-void get_clients(int lis_sockfd, int* cli_sockfd)
+void get_clients(int lis_sockfd, int* cli_sockfd, int* player_count, pthread_mutex_t* mutexcount)
 {
     socklen_t clilen;
     struct sockaddr_in cli_addr;
@@ -41,7 +41,7 @@ void get_clients(int lis_sockfd, int* cli_sockfd)
 
     while (num_conn < 2)
     {
-        listen(lis_sockfd, MAX_PLAYERS - player_count);
+        listen(lis_sockfd, MAX_PLAYERS - *player_count);
 
         memset(&cli_addr, 0, sizeof(cli_addr));
 
@@ -59,9 +59,9 @@ void get_clients(int lis_sockfd, int* cli_sockfd)
             error("Can't send to client");
         }
 
-        pthread_mutex_lock(&mutexcount);
-        player_count++;
-        pthread_mutex_unlock(&mutexcount);
+        pthread_mutex_lock(mutexcount);
+        (*player_count)++;
+        pthread_mutex_unlock(mutexcount);
 
         num_conn++;
     }

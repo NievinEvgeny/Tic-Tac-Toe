@@ -7,12 +7,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-int player_count = 0;
-
-pthread_mutex_t mutexcount;
-
 int main(int argc, char* argv[])
 {
+    int player_count = 0;
+
+    pthread_mutex_t mutexcount;
+
     if (argc != 2)
     {
         fprintf(stderr, "Error arguments\nExample: %s port\n", argv[0]);
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
             int* cli_sockfd = (int*)malloc(2 * sizeof(int));
             memset(cli_sockfd, 0, 2 * sizeof(int));
 
-            get_clients(lis_sockfd, cli_sockfd);
+            get_clients(lis_sockfd, cli_sockfd, &player_count, &mutexcount);
 
             pthread_t new_thread;
 

@@ -33,9 +33,12 @@ int main(int argc, char* argv[])
 
             pthread_t new_thread;
 
-            pthread_data data = {&player_count, cli_sockfd, &mutexcount};
+            pthread_data* data = (pthread_data*)malloc(sizeof(pthread_data));
+            data->cli_sockfd = cli_sockfd;
+            data->mutexcount = &mutexcount;
+            data->player_count = &player_count;
 
-            int result = pthread_create(&new_thread, NULL, run_game, (void*)&data);
+            int result = pthread_create(&new_thread, NULL, run_game, (void*)data);
 
             if (result)
             {

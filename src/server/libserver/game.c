@@ -167,5 +167,6 @@ void* run_game(void* thread_data)
     pthread_mutex_unlock(data->mutexcount);
 
     free(data->cli_sockfd);
+    free(data);
     pthread_exit(NULL);
 }

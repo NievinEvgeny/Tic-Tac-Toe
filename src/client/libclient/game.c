@@ -74,7 +74,7 @@ static short get_move()
 {
     while (true)
     {
-        short move = 0;
+        short move = -1;
 
         int result = scanf("%hd", &move);
 
@@ -174,5 +174,6 @@ void play_game(int sockfd)
         printf("You win\n");
         return;
     }
+
     printf("You lost\n");
 }

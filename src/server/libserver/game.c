@@ -33,13 +33,18 @@ static void setup_players_id(int* cli_sockfd)
     }
 }
 
+static void send_game_state(int cli_sockfd, int32_t game_state)
+{
+    if (send(cli_sockfd, &game_state, sizeof(int32_t), 0) == -1)
+    {
+        error("Can't send update to client");
+    }
+}
+
 static void send_game_update(int* cli_sockfd, int32_t game_state)
 {
-    if ((send(cli_sockfd[0], &game_state, sizeof(int32_t), 0) == -1)
-        || (send(cli_sockfd[1], &game_state, sizeof(int32_t), 0) == -1))
-    {
-        error("Can't send update to clients");
-    }
+    send_game_state(cli_sockfd[0], game_state);
+    send_game_state(cli_sockfd[1], game_state);
 }
 
 static void recv_move(pthread_data* data, int32_t game_state, short* move)
@@ -54,7 +59,13 @@ static void recv_move(pthread_data* data, int32_t game_state, short* move)
     if (msg_len == 0)
     {
         END_GAME(game_state);
-        send_game_update(data->cli_sockfd, game_state);
+
+        if (PLAYER_ID(game_state) ^ 1)
+        {
+            WIN_O(game_state);
+        }
+
+        send_game_state(data->cli_sockfd[PLAYER_ID(game_state) ^ 1], game_state);
 
         pthread_mutex_lock(data->mutexcount);
         *data->player_count -= 2;
@@ -144,6 +155,7 @@ void* run_game(void* thread_data)
             {
                 WIN_O(game_state);
             }
+
             send_game_update(data->cli_sockfd, game_state);
             break;
         }

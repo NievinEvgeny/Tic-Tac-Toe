@@ -54,11 +54,6 @@ void get_clients(int lis_sockfd, int* cli_sockfd, int* player_count, pthread_mut
             error("Can't accept connection from a client");
         }
 
-        if (send(cli_sockfd[num_conn], &num_conn, sizeof(int), 0) == -1)
-        {
-            error("Can't send to client");
-        }
-
         pthread_mutex_lock(mutexcount);
         (*player_count)++;
         pthread_mutex_unlock(mutexcount);

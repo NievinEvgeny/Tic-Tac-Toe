@@ -9,15 +9,14 @@
 
 int setup_listener(int port)
 {
-    int sockfd;
-    struct sockaddr_in serv_addr;
-
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0)
     {
         error("Can't open listener socket");
     }
+
+    struct sockaddr_in serv_addr;
 
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;

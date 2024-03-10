@@ -17,9 +17,10 @@ static bool game_on(int32_t game_state)
     return game_state & 0x80000000;
 }
 
-static void recv_id(int sockfd, bool* id)
+static bool recv_id(int sockfd)
 {
-    int msg_len = recv(sockfd, id, sizeof(bool), 0);
+    bool id = false;
+    int msg_len = recv(sockfd, &id, sizeof(bool), 0);
 
     if (msg_len < 0)
     {
@@ -30,6 +31,8 @@ static void recv_id(int sockfd, bool* id)
     {
         error("Server is shutdown");
     }
+
+    return id;
 }
 
 static void print_board(int32_t game_state)
@@ -97,17 +100,18 @@ static short get_move()
     }
 }
 
-static void send_move(int sockfd, short* move)
+static void send_move(int sockfd, short move)
 {
-    if (send(sockfd, move, sizeof(short), 0) == -1)
+    if (send(sockfd, &move, sizeof(short), 0) == -1)
     {
         error("Can't send move to server");
     }
 }
 
-static void recv_move_validity(int sockfd, bool* move_validity)
+static bool recv_move_validity(int sockfd)
 {
-    int msg_len = recv(sockfd, move_validity, sizeof(bool), 0);
+    bool move_validity = 0;
+    int msg_len = recv(sockfd, &move_validity, sizeof(bool), 0);
 
     if (msg_len < 0)
     {
@@ -118,18 +122,17 @@ static void recv_move_validity(int sockfd, bool* move_validity)
     {
         error("Server is shutdown");
     }
+
+    return move_validity;
 }
 
 static void process_player_move(int sockfd)
 {
     while (true)
     {
-        short move = get_move();
-        send_move(sockfd, &move);
+        send_move(sockfd, get_move());
 
-        bool move_valid = 0;
-        recv_move_validity(sockfd, &move_valid);
-        if (move_valid)
+        if (recv_move_validity(sockfd))
         {
             break;
         }
@@ -141,9 +144,8 @@ static void process_player_move(int sockfd)
 void play_game(int sockfd)
 {
     int32_t game_state = 0;
-    bool id;
 
-    recv_id(sockfd, &id);
+    bool id = recv_id(sockfd);
 
     while (!game_on(game_state))
     {

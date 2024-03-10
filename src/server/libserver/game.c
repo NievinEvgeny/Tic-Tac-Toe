@@ -103,11 +103,7 @@ static bool win_check(int32_t game_state)
 
     for (short i = 0; i < 8; i++)
     {
-        if (((game_state >> 16) & win_states[i]) == win_states[i])
-        {
-            return 1;
-        }
-        if ((game_state & win_states[i]) == win_states[i])
+        if ((((game_state >> 16) & win_states[i]) == win_states[i]) || ((game_state & win_states[i]) == win_states[i]))
         {
             return 1;
         }

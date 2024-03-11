@@ -13,7 +13,7 @@ int setup_listener(int port)
 
     if (sockfd < 0)
     {
-        error("Can't open listener socket");
+        conn_error("Can't open listener socket");
     }
 
     struct sockaddr_in serv_addr;
@@ -25,7 +25,7 @@ int setup_listener(int port)
 
     if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        error("Can't bind listener socket");
+        conn_error("Can't bind listener socket");
     }
 
     return sockfd;
@@ -50,7 +50,7 @@ void get_clients(int lis_sockfd, int* cli_sockfd, int* player_count, pthread_mut
 
         if (cli_sockfd[num_conn] < 0)
         {
-            error("Can't accept connection from a client");
+            conn_error("Can't accept connection from a client");
         }
 
         pthread_mutex_lock(mutexcount);

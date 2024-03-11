@@ -23,80 +23,6 @@ static bool game_on(int32_t game_state)
     return game_state & 0x80000000;
 }
 
-static void setup_players_id(int* cli_sockfd)
-{
-    bool idX = 0, idO = 1;
-
-    if ((send(cli_sockfd[0], &idX, sizeof(bool), 0) == -1) || (send(cli_sockfd[1], &idO, sizeof(bool), 0) == -1))
-    {
-        error("Can't send ids to clients");
-    }
-}
-
-static void send_game_state(int cli_sockfd, int32_t game_state)
-{
-    if (send(cli_sockfd, &game_state, sizeof(int32_t), 0) == -1)
-    {
-        error("Can't send update to client");
-    }
-}
-
-static void send_game_update(int* cli_sockfd, int32_t game_state)
-{
-    send_game_state(cli_sockfd[0], game_state);
-    send_game_state(cli_sockfd[1], game_state);
-}
-
-static void recv_move(pthread_data* data, int32_t game_state, short* move)
-{
-    int msg_len = recv(data->cli_sockfd[PLAYER_ID(game_state)], move, sizeof(short), 0);
-
-    if (msg_len < 0)
-    {
-        error("Can't get move from client");
-    }
-
-    if (msg_len == 0)
-    {
-        END_GAME(game_state);
-
-        if (PLAYER_ID(game_state) ^ 1)
-        {
-            WIN_O(game_state);
-        }
-
-        send_game_state(data->cli_sockfd[PLAYER_ID(game_state) ^ 1], game_state);
-
-        pthread_mutex_lock(data->mutexcount);
-        *data->player_count -= 2;
-        pthread_mutex_unlock(data->mutexcount);
-
-        error("Player disconnected");
-    }
-}
-
-static int32_t process_move(int32_t game_state, short turn)
-{
-    if (PLAYER_ID(game_state))
-    {
-        return game_state | (1 << (turn + 16));
-    }
-    return game_state | (1 << turn);
-}
-
-static bool check_move_valid(int32_t game_state, short move)
-{
-    return (game_state | (game_state >> 16)) & (1 << move) ? 0 : 1;
-}
-
-static void send_move_validity(int* cli_sockfd, int32_t game_state, bool move_valid)
-{
-    if (send(cli_sockfd[PLAYER_ID(game_state)], &move_valid, sizeof(bool), 0) == -1)
-    {
-        error("Can't send move validity to server");
-    }
-}
-
 static bool win_check(int32_t game_state)
 {
     const int win_states[8] = {0x7, 0x38, 0x1C0, 0x124, 0x92, 0x49, 0x111, 0x54};
@@ -118,6 +44,62 @@ static bool draw_check(int32_t game_state)
     return ((game_state | (game_state >> 16)) & draw_state) == draw_state ? 1 : 0;
 }
 
+static bool setup_players_id(int* cli_sockfd)
+{
+    const bool idX = 0, idO = 1;
+
+    return (send(cli_sockfd[0], &idX, sizeof(bool), 0) == -1) || (send(cli_sockfd[1], &idO, sizeof(bool), 0) == -1);
+}
+
+static bool send_game_state(int cli_sockfd, int32_t game_state)
+{
+    return send(cli_sockfd, &game_state, sizeof(int32_t), 0) == -1;
+}
+
+static bool send_game_update(int* cli_sockfd, int32_t game_state)
+{
+    return send_game_state(cli_sockfd[0], game_state) || send_game_state(cli_sockfd[1], game_state);
+}
+
+static void recv_move(pthread_data* data, int32_t game_state, short* move)
+{
+    int msg_len = recv(data->cli_sockfd[PLAYER_ID(game_state)], move, sizeof(short), 0);
+
+    if (msg_len < 0)
+    {
+        game_error("Can't get move from client", data);
+    }
+
+    if (msg_len == 0)
+    {
+        END_GAME(game_state);
+
+        if (PLAYER_ID(game_state) ^ 1)
+        {
+            WIN_O(game_state);
+        }
+
+        send_game_state(data->cli_sockfd[PLAYER_ID(game_state) ^ 1], game_state);
+
+        game_error("Player disconnected", data);
+    }
+}
+
+static int32_t process_move(int32_t game_state, short move)
+{
+    return PLAYER_ID(game_state) ? game_state | (1 << (move + 16)) : game_state | (1 << move);
+}
+
+static bool check_move_valid(int32_t game_state, short move)
+{
+    return (game_state | (game_state >> 16)) & (1 << move) ? 0 : 1;
+}
+
+static bool send_move_validity(int cli_sockfd, bool move_valid)
+{
+    return send(cli_sockfd, &move_valid, sizeof(bool), 0) == -1;
+}
+
 void* run_game(void* thread_data)
 {
     pthread_data* data = (pthread_data*)thread_data;
@@ -125,11 +107,17 @@ void* run_game(void* thread_data)
     // 31 - state, 30 - who won (1 - O, 0 - X), 29 - draw, 15 - which turn
     int32_t game_state = 0x80000000;
 
-    setup_players_id(data->cli_sockfd);
+    if (setup_players_id(data->cli_sockfd))
+    {
+        game_error("Can't send ids to clients", data);
+    }
 
     while (game_on(game_state))
     {
-        send_game_update(data->cli_sockfd, game_state);
+        if (send_game_update(data->cli_sockfd, game_state))
+        {
+            game_error("Can't send update to client", data);
+        }
 
         short move = 0;
         bool move_valid = 0;
@@ -138,7 +126,12 @@ void* run_game(void* thread_data)
         {
             recv_move(data, game_state, &move);
             move_valid = check_move_valid(game_state, move);
-            send_move_validity(data->cli_sockfd, game_state, move_valid);
+
+            if (send_move_validity(data->cli_sockfd[PLAYER_ID(game_state)], move_valid))
+            {
+                game_error("Can't send move validity to client", data);
+            }
+
         } while (!move_valid);
 
         game_state = process_move(game_state, move);

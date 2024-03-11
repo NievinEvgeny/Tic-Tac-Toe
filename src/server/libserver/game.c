@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <sys/time.h>
+#include <signal.h>
 
 #define PLAYER_ID(game_state) (game_state & 0x8000) >> 15
 
@@ -152,6 +153,8 @@ static int32_t process_move(pthread_data* data, int32_t game_state)
 
 void* run_game(void* thread_data)
 {
+    signal(SIGPIPE, SIG_IGN);
+
     pthread_data* data = (pthread_data*)thread_data;
 
     // 31 - state, 30 - who won (1 - O, 0 - X), 29 - draw, 15 - which turn

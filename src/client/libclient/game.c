@@ -108,10 +108,10 @@ static void send_move(int sockfd, short move)
     }
 }
 
-static bool recv_move_validity(int sockfd)
+static int8_t recv_move_validity(int sockfd)
 {
-    bool move_validity = 0;
-    int msg_len = recv(sockfd, &move_validity, sizeof(bool), 0);
+    int8_t move_validity = 0;
+    int msg_len = recv(sockfd, &move_validity, sizeof(int8_t), 0);
 
     if (msg_len < 0)
     {
@@ -132,12 +132,24 @@ static void process_player_move(int sockfd)
     {
         send_move(sockfd, get_move());
 
-        if (recv_move_validity(sockfd))
+        int8_t move_valid = recv_move_validity(sockfd);
+
+        if (move_valid == 1)
         {
-            break;
+            return;
         }
 
-        printf("This field is already occupied, change your move\n");
+        if (move_valid == 0)
+        {
+            printf("This field is already occupied, change your move\n");
+            continue;
+        }
+
+        if (move_valid == -1)
+        {
+            printf("You lost on time\n");
+            return;
+        }
     }
 }
 

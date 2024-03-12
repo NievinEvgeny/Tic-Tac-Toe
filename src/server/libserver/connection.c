@@ -9,15 +9,14 @@
 
 int setup_listener(int port)
 {
-    int sockfd;
-    struct sockaddr_in serv_addr;
-
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0)
     {
-        error("Can't open listener socket");
+        conn_error("Can't open listener socket");
     }
+
+    struct sockaddr_in serv_addr;
 
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -26,7 +25,7 @@ int setup_listener(int port)
 
     if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        error("Can't bind listener socket");
+        conn_error("Can't bind listener socket");
     }
 
     return sockfd;
@@ -51,12 +50,7 @@ void get_clients(int lis_sockfd, int* cli_sockfd, int* player_count, pthread_mut
 
         if (cli_sockfd[num_conn] < 0)
         {
-            error("Can't accept connection from a client");
-        }
-
-        if (send(cli_sockfd[num_conn], &num_conn, sizeof(int), 0) == -1)
-        {
-            error("Can't send to client");
+            conn_error("Can't accept connection from a client");
         }
 
         pthread_mutex_lock(mutexcount);

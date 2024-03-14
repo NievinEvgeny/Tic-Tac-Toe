@@ -17,10 +17,28 @@ static bool game_on(int32_t game_state)
     return game_state & 0x80000000;
 }
 
-static bool recv_id(int sockfd)
+static bool recv_player_id(int sockfd)
 {
     bool id = false;
-    int msg_len = recv(sockfd, &id, sizeof(bool), 0);
+    int msg_len = recv(sockfd, &id, sizeof(id), 0);
+
+    if (msg_len < 0)
+    {
+        error("Can't get id from server");
+    }
+
+    if (msg_len == 0)
+    {
+        error("Server is shutdown");
+    }
+
+    return id;
+}
+
+static uint8_t recv_game_id(int sockfd)
+{
+    uint8_t id = 0;
+    int msg_len = recv(sockfd, &id, sizeof(id), 0);
 
     if (msg_len < 0)
     {
@@ -60,7 +78,7 @@ static void print_board(int32_t game_state)
 
 static void get_game_update(int sockfd, int32_t* game_state)
 {
-    int msg_len = recv(sockfd, game_state, sizeof(int32_t), 0);
+    int msg_len = recv(sockfd, game_state, sizeof(*game_state), 0);
 
     if (msg_len < 0)
     {
@@ -102,7 +120,7 @@ static short get_move()
 
 static void send_move(int sockfd, short move)
 {
-    if (send(sockfd, &move, sizeof(short), 0) == -1)
+    if (send(sockfd, &move, sizeof(move), 0) == -1)
     {
         error("Can't send move to server");
     }
@@ -111,7 +129,7 @@ static void send_move(int sockfd, short move)
 static int8_t recv_move_validity(int sockfd)
 {
     int8_t move_validity = 0;
-    int msg_len = recv(sockfd, &move_validity, sizeof(int8_t), 0);
+    int msg_len = recv(sockfd, &move_validity, sizeof(move_validity), 0);
 
     if (msg_len < 0)
     {
@@ -157,7 +175,8 @@ void play_game(int sockfd)
 {
     int32_t game_state = 0;
 
-    bool id = recv_id(sockfd);
+    const bool player_id = recv_player_id(sockfd);
+    const uint8_t game_id = recv_game_id(sockfd);
 
     while (!game_on(game_state))
     {
@@ -167,7 +186,7 @@ void play_game(int sockfd)
 
     while (game_on(game_state))
     {
-        if (PLAYER_ID(game_state) == id)
+        if (PLAYER_ID(game_state) == player_id)
         {
             printf("Your turn\n");
             process_player_move(sockfd);
@@ -183,9 +202,9 @@ void play_game(int sockfd)
         return;
     }
 
-    if (CHECK_WIN(game_state) == id)
+    if (CHECK_WIN(game_state) == player_id)
     {
-        printf("You win\n");
+        printf("You won\n");
         return;
     }
 

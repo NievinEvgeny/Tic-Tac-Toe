@@ -6,12 +6,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdint.h>
 
 int main(int argc, char* argv[])
 {
     int player_count = 0;
 
     pthread_mutex_t mutexcount;
+
+    game_info games[MAX_PLAYERS] = {0};
+
+    for (short id = 0; id < MAX_PLAYERS; id++)
+    {
+        games[id].game_id = id;
+    }
 
     if (argc != 2)
     {
@@ -22,7 +30,8 @@ int main(int argc, char* argv[])
     int lis_sockfd = setup_listener(atoi(argv[1]));
     pthread_mutex_init(&mutexcount, NULL);
 
-    while (1)
+    // infinite cycle
+    for (uint8_t cur_game_id = 0;; cur_game_id++)
     {
         if (player_count < MAX_PLAYERS)
         {
@@ -34,9 +43,10 @@ int main(int argc, char* argv[])
             pthread_t new_thread;
 
             pthread_data* data = (pthread_data*)malloc(sizeof(pthread_data));
-            data->cli_sockfd = cli_sockfd;
             data->mutexcount = &mutexcount;
             data->player_count = &player_count;
+            data->cli_sockfd = cli_sockfd;
+            data->game_info = &games[cur_game_id];
 
             int result = pthread_create(&new_thread, NULL, run_game, (void*)data);
 

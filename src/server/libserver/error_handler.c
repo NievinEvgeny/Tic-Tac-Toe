@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 
-void conn_error(const char* msg)
+void error(const char* msg)
 {
     perror(msg);
     pthread_exit(NULL);

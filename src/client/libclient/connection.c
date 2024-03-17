@@ -31,7 +31,7 @@ int connect_to_server(char* hostname, int port)
     memset(&serv_addr, 0, sizeof(serv_addr));
 
     serv_addr.sin_family = AF_INET;
-    memmove(server->h_addr, &serv_addr.sin_addr.s_addr, server->h_length);
+    memmove(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
     serv_addr.sin_port = htons(port);
 
     if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)

@@ -152,22 +152,13 @@ static void process_player_move(int sockfd)
 
         int8_t move_valid = recv_move_validity(sockfd);
 
-        if (move_valid == 1)
-        {
-            return;
-        }
-
         if (move_valid == 0)
         {
             printf("This field is already occupied, change your move\n");
             continue;
         }
 
-        if (move_valid == -1)
-        {
-            printf("You lost on time\n");
-            return;
-        }
+        return;
     }
 }
 

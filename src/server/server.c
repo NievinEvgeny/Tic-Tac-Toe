@@ -10,6 +10,12 @@
 
 int main(int argc, char* argv[])
 {
+    if (argc != 2)
+    {
+        fprintf(stderr, "Error arguments\nExample: %s port\n", argv[0]);
+        exit(1);
+    }
+
     int player_count = 0;
 
     pthread_mutex_t mutexcount;
@@ -21,19 +27,13 @@ int main(int argc, char* argv[])
         games[id].game_id = id;
     }
 
-    if (argc != 2)
-    {
-        fprintf(stderr, "Error arguments\nExample: %s port\n", argv[0]);
-        exit(1);
-    }
-
     int lis_sockfd = setup_listener(atoi(argv[1]));
     pthread_mutex_init(&mutexcount, NULL);
 
     // infinite cycle
     for (uint8_t cur_game_id = 0;; cur_game_id++)
     {
-        if (player_count < MAX_PLAYERS)
+        if ((player_count < MAX_PLAYERS) && (!game_on(games[cur_game_id].game_state)))
         {
             int* cli_sockfd = (int*)malloc(2 * sizeof(int));
             memset(cli_sockfd, 0, 2 * sizeof(int));

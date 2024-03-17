@@ -20,9 +20,9 @@ int main(int argc, char* argv[])
 
     pthread_mutex_t mutexcount;
 
-    game_info games[MAX_PLAYERS] = {0};
+    game_info games[MAX_PLAYERS / 2] = {0};
 
-    for (short id = 0; id < MAX_PLAYERS; id++)
+    for (short id = 0; id < MAX_PLAYERS / 2; id++)
     {
         games[id].game_id = id;
     }
@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     // infinite cycle
     for (uint8_t cur_game_id = 0;; cur_game_id++)
     {
-        if ((player_count < MAX_PLAYERS) && (!game_on(games[cur_game_id].game_state)))
+        if ((player_count < MAX_PLAYERS) && (!game_on(games[cur_game_id % (MAX_PLAYERS / 2)].game_state)))
         {
             int* cli_sockfd = (int*)malloc(2 * sizeof(int));
             memset(cli_sockfd, 0, 2 * sizeof(int));
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
             data->mutexcount = &mutexcount;
             data->player_count = &player_count;
             data->cli_sockfd = cli_sockfd;
-            data->game_info = &games[cur_game_id];
+            data->game_info = &games[cur_game_id % (MAX_PLAYERS / 2)];
 
             int result = pthread_create(&new_thread, NULL, run_game, (void*)data);
 

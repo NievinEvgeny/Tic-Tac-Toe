@@ -1,6 +1,7 @@
 #include <server/connection.h>
 #include <server/error_handler.h>
 #include <server/game.h>
+#include <server/synchronization.h>
 #include <string.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -27,10 +28,29 @@ int main(int argc, char* argv[])
         games[id].game_id = id;
     }
 
+    bool is_primary = false;
+    const char* servs_filename = "servers_info.dat";
+    const uint64_t servs_num = 3;
+
+    synchronization_data sync_data = {servs_filename, servs_num, atoi(argv[1]), &is_primary, games};
+
+    pthread_t sync_thread;
+
+    int sync_result = pthread_create(&sync_thread, NULL, synchronization, (void*)&sync_data);
+
+    if (sync_result)
+    {
+        printf("Thread creation failed with return code %d\n", sync_result);
+        exit(-1);
+    }
+
+    while (!is_primary)
+    {
+    }
+
     int lis_sockfd = setup_listener(atoi(argv[1]));
     pthread_mutex_init(&mutexcount, NULL);
 
-    // infinite cycle
     for (uint8_t cur_game_id = 0;; cur_game_id++)
     {
         if ((player_count < MAX_PLAYERS) && (!game_on(games[cur_game_id % (MAX_PLAYERS / 2)].game_state)))

@@ -60,7 +60,7 @@ static uint64_t get_servers_info(const char* filename, int port, uint64_t server
     int cur_port = 0;
 
     for (uint64_t priority = 0;
-         (fscanf(servers_file, "%s %d", cur_ip_str, &cur_port) != EOF) || (priority < servers_num);
+         (fscanf(servers_file, "%s %d", cur_ip_str, &cur_port) != EOF) && (priority < servers_num);
          priority++)
     {
         inet_pton(AF_INET, cur_ip_str, &cur_ip);

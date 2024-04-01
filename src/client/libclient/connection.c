@@ -7,11 +7,32 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 
-int connect_to_server(char* hostname, int port)
+void get_servers_info(const char* filename, server_info* servers_info, uint64_t servers_num)
+{
+    FILE* servers_file = fopen(filename, "r");
+
+    if (servers_file == NULL)
+    {
+        error("Unable to open file with servers info");
+    }
+
+    char cur_ip_str[INET_ADDRSTRLEN];
+    int cur_port = 0;
+
+    for (uint64_t cur_server = 0;
+         (fscanf(servers_file, "%s %d", cur_ip_str, &cur_port) != EOF) && (cur_server < servers_num);
+         cur_server++)
+    {
+        inet_pton(AF_INET, cur_ip_str, &servers_info[cur_server].ip);
+        servers_info[cur_server].port = cur_port;
+    }
+}
+
+int connect_to_server(uint32_t ip, int port)
 {
     struct sockaddr_in serv_addr;
-    struct hostent* server;
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -20,23 +41,31 @@ int connect_to_server(char* hostname, int port)
         error("Can't open socket for server");
     }
 
-    server = gethostbyname(hostname);
-
-    if (server == NULL)
-    {
-        fprintf(stderr, "Can't find host with name: %s\n", hostname);
-        exit(0);
-    }
-
     memset(&serv_addr, 0, sizeof(serv_addr));
 
     serv_addr.sin_family = AF_INET;
-    memmove(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+    serv_addr.sin_addr.s_addr = ip;
     serv_addr.sin_port = htons(port);
 
-    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
+    return connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == 0 ? sockfd : -1;
+}
+
+int connect_to_primary_server(server_info* servers_info, uint64_t servers_num, uint64_t* cur_server)
+{
+    const uint8_t serv_lis_sock_shift = 100;
+
+    int sockfd = -1;
+
+    while (
+        (sockfd = connect_to_server(servers_info[*cur_server].ip, servers_info[*cur_server].port + serv_lis_sock_shift))
+        == -1)
     {
-        error("Can't connect to server");
+        (*cur_server)++;
+
+        if (*cur_server == servers_num)
+        {
+            error("All servers unavailable\n");
+        }
     }
 
     return sockfd;

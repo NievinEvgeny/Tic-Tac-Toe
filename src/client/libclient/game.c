@@ -1,3 +1,4 @@
+#include <client/connection.h>
 #include <client/game.h>
 #include <client/error_handler.h>
 #include <stdbool.h>
@@ -15,42 +16,6 @@
 static bool game_on(int32_t game_state)
 {
     return game_state & 0x80000000;
-}
-
-static bool recv_player_id(int sockfd)
-{
-    bool id = false;
-    int msg_len = recv(sockfd, &id, sizeof(id), 0);
-
-    if (msg_len < 0)
-    {
-        error("Can't get id from server");
-    }
-
-    if (msg_len == 0)
-    {
-        error("Server is shutdown");
-    }
-
-    return id;
-}
-
-static uint8_t recv_game_id(int sockfd)
-{
-    uint8_t id = 0;
-    int msg_len = recv(sockfd, &id, sizeof(id), 0);
-
-    if (msg_len < 0)
-    {
-        error("Can't get id from server");
-    }
-
-    if (msg_len == 0)
-    {
-        error("Server is shutdown");
-    }
-
-    return id;
 }
 
 static void print_board(int32_t game_state)
@@ -76,19 +41,19 @@ static void print_board(int32_t game_state)
     }
 }
 
-static void get_game_update(int sockfd, int32_t* game_state)
+static int8_t recv_int8(int sockfd)
+{
+    int8_t data = 0;
+    int msg_len = recv(sockfd, &data, sizeof(data), 0);
+
+    return msg_len > 0 ? data : -1;
+}
+
+static bool get_game_update(int sockfd, int32_t* game_state)
 {
     int msg_len = recv(sockfd, game_state, sizeof(*game_state), 0);
 
-    if (msg_len < 0)
-    {
-        error("Can't get update of game from server");
-    }
-
-    if (msg_len == 0)
-    {
-        error("Server is shutdown");
-    }
+    return msg_len > 0;
 }
 
 static short get_move()
@@ -120,37 +85,16 @@ static short get_move()
 
 static void send_move(int sockfd, short move)
 {
-    if (send(sockfd, &move, sizeof(move), 0) == -1)
-    {
-        error("Can't send move to server");
-    }
+    send(sockfd, &move, sizeof(move), 0);
 }
 
-static int8_t recv_move_validity(int sockfd)
-{
-    int8_t move_validity = 0;
-    int msg_len = recv(sockfd, &move_validity, sizeof(move_validity), 0);
-
-    if (msg_len < 0)
-    {
-        error("Can't get move validity from server");
-    }
-
-    if (msg_len == 0)
-    {
-        error("Server is shutdown");
-    }
-
-    return move_validity;
-}
-
-static void process_player_move(int sockfd)
+static bool process_player_move(int sockfd)
 {
     while (true)
     {
         send_move(sockfd, get_move());
 
-        int8_t move_valid = recv_move_validity(sockfd);
+        int8_t move_valid = recv_int8(sockfd);
 
         if (move_valid == 0)
         {
@@ -158,20 +102,34 @@ static void process_player_move(int sockfd)
             continue;
         }
 
-        return;
+        return move_valid != -1;
     }
 }
 
-void play_game(int sockfd)
+void play_game(server_info* servers_info, uint64_t servers_num)
 {
+    uint64_t cur_server = 0;
+
+    int sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+
     int32_t game_state = 0;
 
-    const bool player_id = recv_player_id(sockfd);
-    const uint8_t game_id = recv_game_id(sockfd);
+    const int8_t player_id = recv_int8(sockfd);
+    const int8_t game_id = recv_int8(sockfd);
+
+    if ((player_id == -1) || (game_id == -1))
+    {
+        sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+    }
 
     while (!game_on(game_state))
     {
-        get_game_update(sockfd, &game_state);
+        if (!get_game_update(sockfd, &game_state))
+        {
+            sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+            send(sockfd, &game_id, sizeof(game_id), 0);
+        }
+
         print_board(game_state);
     }
 
@@ -180,10 +138,20 @@ void play_game(int sockfd)
         if (PLAYER_ID(game_state) == player_id)
         {
             printf("Your turn\n");
-            process_player_move(sockfd);
+
+            if (!process_player_move(sockfd))
+            {
+                sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+                send(sockfd, &game_id, sizeof(game_id), 0);
+            }
         }
 
-        get_game_update(sockfd, &game_state);
+        if (!get_game_update(sockfd, &game_state))
+        {
+            sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+            send(sockfd, &game_id, sizeof(game_id), 0);
+        }
+
         print_board(game_state);
     }
 

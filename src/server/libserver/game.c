@@ -94,7 +94,7 @@ static int8_t recv_move(int cli_sockfd, int32_t game_state, short* move)
 {
     int msg_len = recv(cli_sockfd, move, sizeof(*move), 0);
 
-    return (msg_len > 0) ? check_move_valid(game_state, *move) : (msg_len < 0) ? -1 : -2;
+    return (msg_len > 0) ? check_move_valid(game_state, *move) : (msg_len < 0) ? -2 : -1;
 }
 
 static bool send_move_validity(int cli_sockfd, int8_t move_valid)
@@ -125,10 +125,10 @@ static int32_t process_move(int cli_sockfd, int32_t game_state)
     {
         short move = 0;
 
-        // 1 - valid move, 0 - invalid move, -1 - timeout, -2 - player disconnected
+        // 1 - valid move, 0 - invalid move, -1 - player disconnected, -2 - timeout
         int8_t recv_move_res = recv_move(cli_sockfd, game_state, &move);
 
-        if (recv_move_res != -2)
+        if (recv_move_res != -1)
         {
             if (send_move_validity(cli_sockfd, recv_move_res))
             {

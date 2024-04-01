@@ -48,6 +48,8 @@ int main(int argc, char* argv[])
     {
     }
 
+    // TODO recovery
+
     int lis_sockfd = setup_listener(atoi(argv[1]));
     pthread_mutex_init(&mutexcount, NULL);
 

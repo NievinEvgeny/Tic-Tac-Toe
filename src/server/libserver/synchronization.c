@@ -79,16 +79,8 @@ static uint64_t get_servers_info(const char* filename, int port, uint64_t server
     return UINT64_MAX;
 }
 
-void* synchronization(void* thread_data)
+static void recv_games_updates(synchronization_data* data, uint8_t lis_port_shift)
 {
-    const uint8_t lis_port_shift = 50;
-
-    synchronization_data* data = (synchronization_data*)thread_data;
-
-    const int listen_port = data->port + lis_port_shift;
-    int lis_sockfd = setup_listener(listen_port);
-    listen(lis_sockfd, data->servers_num);
-
     server_info servers_info[data->servers_num];
 
     uint64_t serv_priority = get_servers_info(data->servers_filename, data->port, data->servers_num, servers_info);
@@ -123,11 +115,12 @@ void* synchronization(void* thread_data)
             }
         }
     }
+}
 
-    *data->is_primary = true;
-
+static void send_games_updates(int lis_sockfd, synchronization_data* data)
+{
     struct timeval timeout;
-    timeout.tv_sec = 10;
+    timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
     struct sockaddr_in serv_addr;
@@ -176,4 +169,21 @@ void* synchronization(void* thread_data)
             }
         }
     }
+}
+
+void* synchronization(void* thread_data)
+{
+    const uint8_t lis_port_shift = 50;
+
+    synchronization_data* data = (synchronization_data*)thread_data;
+
+    const int listen_port = data->port + lis_port_shift;
+    int lis_sockfd = setup_listener(listen_port);
+    listen(lis_sockfd, data->servers_num);
+
+    recv_games_updates(data, lis_port_shift);  // until this server isn't primary
+
+    *data->is_primary = true;
+
+    send_games_updates(lis_sockfd, data);
 }

@@ -52,13 +52,9 @@ int connect_to_server(uint32_t ip, int port)
 
 int connect_to_primary_server(server_info* servers_info, uint64_t servers_num, uint64_t* cur_server)
 {
-    const uint8_t serv_lis_sock_shift = 100;
-
     int sockfd = -1;
 
-    while (
-        (sockfd = connect_to_server(servers_info[*cur_server].ip, servers_info[*cur_server].port + serv_lis_sock_shift))
-        == -1)
+    while ((sockfd = connect_to_server(servers_info[*cur_server].ip, servers_info[*cur_server].port)) == -1)
     {
         (*cur_server)++;
 

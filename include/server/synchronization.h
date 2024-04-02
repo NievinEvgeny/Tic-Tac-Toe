@@ -22,6 +22,7 @@ typedef struct
     uint64_t servers_num;
     int port;
     bool* is_primary;
+    bool* was_slave;
     game_info* games;
 } synchronization_data;
 

@@ -110,7 +110,7 @@ void play_game(server_info* servers_info, uint64_t servers_num)
 {
     uint64_t cur_server = 0;
 
-    int sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+    int sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server, false);
 
     int32_t game_state = 0;
 
@@ -119,14 +119,15 @@ void play_game(server_info* servers_info, uint64_t servers_num)
 
     if ((player_id == -1) || (game_id == -1))
     {
-        sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+        error("Game aborted\n");
     }
 
     while (!game_on(game_state))
     {
         if (!get_game_update(sockfd, &game_state))
         {
-            sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+            close(sockfd);
+            sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server, true);
             send(sockfd, &game_id, sizeof(game_id), 0);
         }
 
@@ -141,14 +142,16 @@ void play_game(server_info* servers_info, uint64_t servers_num)
 
             if (!process_player_move(sockfd))
             {
-                sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+                close(sockfd);
+                sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server, true);
                 send(sockfd, &game_id, sizeof(game_id), 0);
             }
         }
 
         if (!get_game_update(sockfd, &game_state))
         {
-            sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server);
+            close(sockfd);
+            sockfd = connect_to_primary_server(servers_info, servers_num, &cur_server, true);
             send(sockfd, &game_id, sizeof(game_id), 0);
         }
 

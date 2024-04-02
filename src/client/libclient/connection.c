@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 
 void get_servers_info(const char* filename, server_info* servers_info, uint64_t servers_num)
 {
@@ -47,14 +48,32 @@ int connect_to_server(uint32_t ip, int port)
     serv_addr.sin_addr.s_addr = ip;
     serv_addr.sin_port = htons(port);
 
-    return connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == 0 ? sockfd : -1;
+    if (connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)))
+    {
+        close(sockfd);
+        return -1;
+    }
+
+    return sockfd;
 }
 
-int connect_to_primary_server(server_info* servers_info, uint64_t servers_num, uint64_t* cur_server)
+int connect_to_primary_server(server_info* servers_info, uint64_t servers_num, uint64_t* cur_server, bool is_recovery)
 {
+    uint8_t rec_port_shift;
+
+    if (is_recovery)
+    {
+        rec_port_shift = 100;
+    }
+    else
+    {
+        rec_port_shift = 0;
+    }
+
     int sockfd = -1;
 
-    while ((sockfd = connect_to_server(servers_info[*cur_server].ip, servers_info[*cur_server].port)) == -1)
+    while ((sockfd = connect_to_server(servers_info[*cur_server].ip, servers_info[*cur_server].port + rec_port_shift))
+           == -1)
     {
         (*cur_server)++;
 

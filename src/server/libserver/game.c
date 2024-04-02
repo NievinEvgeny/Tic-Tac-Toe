@@ -155,15 +155,18 @@ void* run_game(void* thread_data)
 
     pthread_data* data = (pthread_data*)thread_data;
 
-    if (setup_players_id(data->cli_sockfd) || setup_game_id(data->cli_sockfd, data->game_info->game_id))
+    if (!game_on(data->game_info->game_state))
     {
-        game_error("Can't send ids to clients", data);
+        if (setup_players_id(data->cli_sockfd) || setup_game_id(data->cli_sockfd, data->game_info->game_id))
+        {
+            game_error("Can't send ids to clients", data);
+        }
+
+        set_socks_timeout(data->cli_sockfd);
+
+        // 31 - state, 30 - who won (1 - O, 0 - X), 29 - draw, 15 - which turn
+        data->game_info->game_state = 0x80000000;
     }
-
-    set_socks_timeout(data->cli_sockfd);
-
-    // 31 - state, 30 - who won (1 - O, 0 - X), 29 - draw, 15 - which turn
-    data->game_info->game_state = 0x80000000;
 
     while (game_on(data->game_info->game_state))
     {

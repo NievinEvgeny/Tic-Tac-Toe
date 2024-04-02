@@ -2,12 +2,14 @@
 #include <server/error_handler.h>
 #include <server/game.h>
 #include <server/synchronization.h>
+#include <server/recovery.h>
 #include <string.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <sys/socket.h>
 
 int main(int argc, char* argv[])
 {
@@ -28,11 +30,13 @@ int main(int argc, char* argv[])
         games[id].game_id = id;
     }
 
+    bool was_slave = false;
     bool is_primary = false;
+    const int port = atoi(argv[1]);
     const char* servs_filename = "servers_info.dat";
     const uint64_t servs_num = 3;
 
-    synchronization_data sync_data = {servs_filename, servs_num, atoi(argv[1]), &is_primary, games};
+    synchronization_data sync_data = {servs_filename, servs_num, port, &is_primary, &was_slave, games};
 
     pthread_t sync_thread;
 
@@ -44,13 +48,19 @@ int main(int argc, char* argv[])
         exit(-1);
     }
 
+    int rec_lis_sockfd = setup_listener(port + 100);
+    listen(rec_lis_sockfd, MAX_PLAYERS);
+
     while (!is_primary)
     {
     }
 
-    // TODO recovery
+    if (was_slave)
+    {
+        recovery(rec_lis_sockfd, games, &player_count, &mutexcount);
+    }
 
-    int lis_sockfd = setup_listener(atoi(argv[1]));
+    int lis_sockfd = setup_listener(port);
     pthread_mutex_init(&mutexcount, NULL);
 
     for (uint8_t cur_game_id = 0;; cur_game_id++)

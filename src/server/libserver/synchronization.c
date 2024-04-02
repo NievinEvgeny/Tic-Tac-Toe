@@ -92,6 +92,8 @@ static void recv_games_updates(synchronization_data* data, uint8_t lis_port_shif
 
     if (serv_priority != 0)
     {
+        *data->was_slave = true;
+
         uint64_t cur_priority = 0;
 
         int cur_serv_sock_fd

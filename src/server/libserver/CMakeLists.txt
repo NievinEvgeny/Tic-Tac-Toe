@@ -9,6 +9,8 @@ add_library(${target_name} STATIC
     ${PROJECT_SOURCE_DIR}/include/server/game.h
     synchronization.c
     ${PROJECT_SOURCE_DIR}/include/server/synchronization.h
+    recovery.c
+    ${PROJECT_SOURCE_DIR}/include/server/recovery.h
 )
 
 include(CompileOptions)

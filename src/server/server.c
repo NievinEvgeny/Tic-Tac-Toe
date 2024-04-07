@@ -23,12 +23,7 @@ int main(int argc, char* argv[])
 
     pthread_mutex_t mutexcount;
 
-    game_info games[MAX_PLAYERS / 2] = {0};
-
-    for (short id = 0; id < MAX_PLAYERS / 2; id++)
-    {
-        games[id].game_id = id;
-    }
+    int32_t games[MAX_PLAYERS / 2] = {0};
 
     bool was_slave = false;
     bool is_primary = false;
@@ -60,12 +55,14 @@ int main(int argc, char* argv[])
         recovery(rec_lis_sockfd, games, &player_count, &mutexcount);
     }
 
+    close(rec_lis_sockfd);
+
     int lis_sockfd = setup_listener(port);
     pthread_mutex_init(&mutexcount, NULL);
 
     for (uint8_t cur_game_id = 0;; cur_game_id++)
     {
-        if ((player_count < MAX_PLAYERS) && (!game_on(games[cur_game_id % (MAX_PLAYERS / 2)].game_state)))
+        if ((player_count < MAX_PLAYERS) && (!game_on(games[cur_game_id % (MAX_PLAYERS / 2)])))
         {
             int* cli_sockfd = (int*)malloc(2 * sizeof(int));
             memset(cli_sockfd, 0, 2 * sizeof(int));
@@ -79,6 +76,7 @@ int main(int argc, char* argv[])
             data->player_count = &player_count;
             data->cli_sockfd = cli_sockfd;
             data->game_info = &games[cur_game_id % (MAX_PLAYERS / 2)];
+            data->game_id = cur_game_id;
 
             int result = pthread_create(&new_thread, NULL, run_game, (void*)data);
 

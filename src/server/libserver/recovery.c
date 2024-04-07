@@ -10,38 +10,44 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void recovery(int lis_sockfd, game_info* games, int* player_count, pthread_mutex_t* mutexcount)
+void recovery(int lis_sockfd, int32_t* games, int* player_count, pthread_mutex_t* mutexcount)
 {
-    int players[MAX_PLAYERS][2] = {0};
-    int players_cnt[MAX_PLAYERS] = {0};
+    int** players = (int**)malloc(sizeof(int*) * MAX_PLAYERS);
+
+    for (uint8_t i = 0; i < MAX_PLAYERS / 2; i++)
+    {
+        players[i] = (int*)malloc(sizeof(int) * 2);
+    }
+
+    int players_cnt[MAX_PLAYERS / 2] = {0};
 
     time_t start_time = time(NULL);
 
-    while ((time(NULL) - start_time) <= 10)
+    while ((time(NULL) - start_time) <= 1)
     {
-        int cli_sockfd = accept(lis_sockfd, NULL, NULL);
+        int client_sockfd = accept(lis_sockfd, NULL, NULL);
 
-        if (cli_sockfd < 0)
+        if (client_sockfd < 0)
         {
             continue;
         }
 
         int8_t game_id = -1;
-        recv(cli_sockfd, &game_id, sizeof(game_id), 0);
+        recv(client_sockfd, &game_id, sizeof(game_id), 0);
 
         if (game_id < 0)
         {
             continue;
         }
 
-        players[game_id][players_cnt[game_id]++] = cli_sockfd;
+        players[game_id][players_cnt[game_id]++] = client_sockfd;
+    }
 
-        if (players_cnt[game_id] == 2)
+    for (uint8_t game_id = 0; game_id < MAX_PLAYERS / 2; game_id++)
+    {
+        if (players_cnt[game_id] > 0)
         {
             pthread_t new_thread;
-
-            int* cli_sockfd = (int*)malloc(2 * sizeof(int));
-            memset(cli_sockfd, 0, 2 * sizeof(int));
 
             pthread_data* data = (pthread_data*)malloc(sizeof(pthread_data));
             data->mutexcount = mutexcount;

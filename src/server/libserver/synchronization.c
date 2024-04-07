@@ -101,7 +101,7 @@ static void recv_games_updates(synchronization_data* data, uint8_t lis_port_shif
 
         while (true)
         {
-            if (recv(cur_serv_sock_fd, data->games, sizeof(game_info) * MAX_PLAYERS / 2, 0) <= 0)
+            if (recv(cur_serv_sock_fd, data->games, sizeof(int32_t) * MAX_PLAYERS / 2, 0) <= 0)
             {
                 close(cur_serv_sock_fd);
 
@@ -139,7 +139,7 @@ static void send_games_updates(int lis_sockfd, synchronization_data* data)
                 continue;
             }
 
-            if (send(connected_servers[i].sock_fd, data->games, sizeof(game_info) * MAX_PLAYERS / 2, 0) == -1)
+            if (send(connected_servers[i].sock_fd, data->games, sizeof(int32_t) * MAX_PLAYERS / 2, 0) == -1)
             {
                 connected_servers[i].is_connected = false;
             }

@@ -6,16 +6,11 @@
 
 typedef struct
 {
-    int32_t game_state;
-    uint8_t game_id;
-} game_info;
-
-typedef struct
-{
     pthread_mutex_t* mutexcount;
     int* player_count;
     int* cli_sockfd;
-    game_info* game_info;
+    int32_t* game_info;
+    int8_t game_id;
 } pthread_data;
 
 bool game_on(int32_t game_state);

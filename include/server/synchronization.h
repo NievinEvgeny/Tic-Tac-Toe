@@ -23,7 +23,7 @@ typedef struct
     int port;
     bool* is_primary;
     bool* was_slave;
-    game_info* games;
+    int32_t* games;
 } synchronization_data;
 
 void* synchronization(void* thread_data);

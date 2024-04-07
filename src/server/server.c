@@ -52,10 +52,18 @@ int main(int argc, char* argv[])
 
     if (was_slave)
     {
-        recovery(rec_lis_sockfd, games, &player_count, &mutexcount);
-    }
+        recovery_data rec_data = {rec_lis_sockfd, games, &player_count, &mutexcount};
 
-    close(rec_lis_sockfd);
+        pthread_t rec_thread;
+
+        int rec_result = pthread_create(&rec_thread, NULL, recovery, (void*)&rec_data);
+
+        if (rec_result)
+        {
+            printf("Thread creation failed with return code %d\n", rec_result);
+            exit(-1);
+        }
+    }
 
     int lis_sockfd = setup_listener(port);
     pthread_mutex_init(&mutexcount, NULL);
@@ -88,6 +96,7 @@ int main(int argc, char* argv[])
         }
     }
 
+    close(rec_lis_sockfd);
     close(lis_sockfd);
 
     pthread_mutex_destroy(&mutexcount);

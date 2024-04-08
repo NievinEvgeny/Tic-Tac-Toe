@@ -1,8 +1,11 @@
 #pragma once
 
 #include <sys/types.h>
+#include <stdint.h>
 
 #define MAX_PLAYERS 256
+
+int connect_to_server(uint32_t ip, int port);
 
 int setup_listener(int port);
 

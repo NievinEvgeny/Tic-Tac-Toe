@@ -13,9 +13,9 @@
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        fprintf(stderr, "Error arguments\nExample: %s port\n", argv[0]);
+        fprintf(stderr, "Error arguments\nExample: %s \"file_with_servers_info.txt\" port\n", argv[0]);
         exit(1);
     }
 
@@ -27,8 +27,8 @@ int main(int argc, char* argv[])
 
     bool was_slave = false;
     bool is_primary = false;
-    const int port = atoi(argv[1]);
-    const char* servs_filename = "servers_info.dat";
+    const int port = atoi(argv[2]);
+    const char* servs_filename = argv[1];
     const uint64_t servs_num = 3;
 
     synchronization_data sync_data = {servs_filename, servs_num, port, &is_primary, &was_slave, games};

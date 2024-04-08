@@ -59,25 +59,14 @@ int connect_to_server(uint32_t ip, int port)
 
 int connect_to_primary_server(server_info* servers_info, uint64_t servers_num, uint64_t* cur_server, bool is_recovery)
 {
-    uint8_t rec_port_shift;
-
-    if (is_recovery)
-    {
-        rec_port_shift = 100;
-    }
-    else
-    {
-        rec_port_shift = 0;
-    }
+    uint8_t rec_port_shift = is_recovery ? 100 : 0;
 
     int sockfd = -1;
 
     while ((sockfd = connect_to_server(servers_info[*cur_server].ip, servers_info[*cur_server].port + rec_port_shift))
            == -1)
     {
-        (*cur_server)++;
-
-        if (*cur_server == servers_num)
+        if (++(*cur_server) == servers_num)
         {
             error("All servers unavailable\n");
         }

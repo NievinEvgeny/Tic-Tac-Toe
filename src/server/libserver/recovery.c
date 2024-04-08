@@ -52,6 +52,14 @@ void* recovery(void* thread_data)
             data->mutexcount = rec_data->mutexcount;
             data->player_count = rec_data->player_count;
             data->cli_sockfd = players[game_id];
+
+            if (!((rec_data->games[game_id] & 0x8000) >> 15))  // TODO
+            {
+                int tmp = data->cli_sockfd[0];
+                data->cli_sockfd[0] = data->cli_sockfd[1];
+                data->cli_sockfd[1] = tmp;
+            }
+
             data->game_info = &rec_data->games[game_id];
 
             int result = pthread_create(&new_thread, NULL, run_game, (void*)data);
@@ -63,4 +71,7 @@ void* recovery(void* thread_data)
             }
         }
     }
+
+    free(players);
+    pthread_exit(NULL);
 }
